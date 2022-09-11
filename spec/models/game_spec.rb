@@ -70,7 +70,7 @@ RSpec.describe Game, type: :model do
       game_w_questions.take_money!
 
       prize = game_w_questions.prize
-      
+
       expect(prize).to be >0
 
       expect(game_w_questions.status).to be :money
@@ -99,10 +99,24 @@ RSpec.describe Game, type: :model do
       game_w_questions.created_at = 1.hour.ago
       game_w_questions.is_failed = true
       expect(game_w_questions.status).to eq(:timeout)
-    end 
+    end
 
     it 'returns :money' do
       expect(game_w_questions.status).to eq(:money)
+    end
+  end
+
+  describe '#current_game_question' do
+    it 'returns a question of current level' do
+      game_w_questions.current_level = 1
+      expect(game_w_questions.current_game_question.level).to eq 1
+    end
+  end
+
+  describe '#previous_level' do
+    it 'returns previous level number' do
+      game_w_questions.current_level = 2
+      expect(game_w_questions.previous_level).to eq 1
     end
   end
 end
