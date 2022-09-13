@@ -108,8 +108,7 @@ RSpec.describe Game, type: :model do
 
   describe '#current_game_question' do
     it 'returns a question of current level' do
-      game_w_questions.current_level = 1
-      expect(game_w_questions.current_game_question.level).to eq 1
+      expect(game_w_questions.current_game_question).to eq game_w_questions.game_questions[0]
     end
   end
 
@@ -117,6 +116,54 @@ RSpec.describe Game, type: :model do
     it 'returns previous level number' do
       game_w_questions.current_level = 2
       expect(game_w_questions.previous_level).to eq 1
+    end
+  end
+
+  describe '#answer_current_question!' do
+    it 'returns false when the game is finished' do
+      game_w_questions.finished_at = Time.now
+      expect(game_w_questions.answer_current_question!(
+        game_w_questions.game_questions[0].correct_answer_key)).to be_falsey
+    end
+
+    context 'when answer is correct' do
+      it 'increments current_level' do
+        game_w_questions.answer_current_question!(game_w_questions.game_questions[0].correct_answer_key)
+        expect(game_w_questions.current_level).to eq 1
+      end
+
+      it 'ends the game, if the question is last' do
+        game_w_questions.current_level = Question::QUESTION_LEVELS.max
+        game_w_questions.answer_current_question!('b')
+        expect(game_w_questions.finished_at).to be_present
+      end
+
+      it 'credits the maximum winnings to the player\'s account, if the question is last' do
+        game_w_questions.current_level = Question::QUESTION_LEVELS.max
+        game_w_questions.answer_current_question!(game_w_questions.game_questions[0].correct_answer_key)
+        expect(user.balance).to eq Game::PRIZES[Question::QUESTION_LEVELS.max]
+      end
+    end
+
+    context 'when answer is incorrect' do
+      it 'ends the game' do
+        game_w_questions.answer_current_question!('c')
+        expect(game_w_questions.finished_at).to be_present
+      end
+
+      it 'fires all the user\'s balance, if the user has not won a fireproof amount' do
+        game_w_questions.answer_current_question!('c')
+        expect(user.balance).to be 0
+      end
+
+      it 'fires the user\'s balance to a fireproof amount' do
+        fireproof_level = Game::FIREPROOF_LEVELS[0]
+        level_after_fireproof = fireproof_level + 1
+
+        game_w_questions.current_level = level_after_fireproof
+        game_w_questions.answer_current_question!('c')
+        expect(user.balance).to eq Game::PRIZES[fireproof_level]
+      end
     end
   end
 end
