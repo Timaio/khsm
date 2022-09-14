@@ -126,22 +126,34 @@ RSpec.describe Game, type: :model do
         game_w_questions.game_questions[0].correct_answer_key)).to be_falsey
     end
 
+    it 'returns false when time is over' do
+      game_w_questions.created_at = Time.now - Game::TIME_LIMIT - 1.second
+      game_w_questions.time_out!
+      expect(game_w_questions.answer_current_question!(
+        game_w_questions.game_questions[0].correct_answer_key)).to be_falsey
+    end
+
     context 'when answer is correct' do
       it 'increments current_level' do
-        game_w_questions.answer_current_question!(game_w_questions.game_questions[0].correct_answer_key)
+        game_w_questions.answer_current_question!(
+          game_w_questions.game_questions[0].correct_answer_key)
         expect(game_w_questions.current_level).to eq 1
       end
 
-      it 'ends the game, if the question is last' do
-        game_w_questions.current_level = Question::QUESTION_LEVELS.max
-        game_w_questions.answer_current_question!('b')
-        expect(game_w_questions.finished_at).to be_present
-      end
+      context 'when the question is last' do
+        before(:each) do
+          game_w_questions.current_level = Question::QUESTION_LEVELS.max
+          game_w_questions.answer_current_question!(
+            game_w_questions.game_questions[0].correct_answer_key)
+        end
 
-      it 'credits the maximum winnings to the player\'s account, if the question is last' do
-        game_w_questions.current_level = Question::QUESTION_LEVELS.max
-        game_w_questions.answer_current_question!(game_w_questions.game_questions[0].correct_answer_key)
-        expect(user.balance).to eq Game::PRIZES[Question::QUESTION_LEVELS.max]
+        it 'ends the game' do
+          expect(game_w_questions.finished_at).to be_present
+        end
+
+        it 'credits the maximum winnings to the player\'s account' do
+          expect(user.balance).to eq Game::PRIZES[Question::QUESTION_LEVELS.max]
+        end
       end
     end
 
