@@ -20,13 +20,36 @@ RSpec.describe GamesController, type: :controller do
   # группа тестов для незалогиненного юзера (Анонимус)
   context 'Anon' do
     # из экшена show анона посылаем
-    it 'kick from #show' do
-      # вызываем экшен
-      get :show, id: game_w_questions.id
+    after(:each) do
       # проверяем ответ
       expect(response.status).not_to eq(200) # статус не 200 ОК
       expect(response).to redirect_to(new_user_session_path) # devise должен отправить на логин
       expect(flash[:alert]).to be # во flash должен быть прописана ошибка
+    end
+
+    it 'kick from #show' do
+      # вызываем экшен
+      get :show, id: game_w_questions.id
+    end
+
+    it 'kick from #create' do
+      # вызываем экшен
+      post :create, id: game_w_questions.id
+    end
+
+    it 'kick from #answer' do
+      # вызываем экшен
+      put :answer, id: game_w_questions.id
+    end
+
+    it 'kick from #take_money' do
+      # вызываем экшен
+      put :take_money, id: game_w_questions.id
+    end
+
+    it 'kick from #help' do
+      # вызываем экшен
+      put :help, id: game_w_questions.id
     end
   end
 
@@ -52,7 +75,7 @@ RSpec.describe GamesController, type: :controller do
     end
 
     # юзер видит свою игру
-    it '#show game' do
+    it '#show alien game' do
       get :show, id: game_w_questions.id
       game = assigns(:game) # вытаскиваем из контроллера поле @game
       expect(game.finished?).to be_falsey
@@ -60,6 +83,15 @@ RSpec.describe GamesController, type: :controller do
 
       expect(response.status).to eq(200) # должен быть ответ HTTP 200
       expect(response).to render_template('show') # и отрендерить шаблон show
+    end
+
+    # юзер не видит чужую игру
+    it "#show game" do
+      alien_game = FactoryBot.create(:game_with_questions)
+      get :show, id: alien_game.id
+      expect(response.status).not_to eq(200) # статус не 200 ОК
+      expect(response).to redirect_to(root_path)
+      expect(flash[:alert]).to be_present # во flash должен быть прописана ошибка
     end
 
     # юзер отвечает на игру корректно - игра продолжается
@@ -80,7 +112,7 @@ RSpec.describe GamesController, type: :controller do
       expect(game_w_questions.current_game_question.help_hash[:audience_help]).not_to be
       expect(game_w_questions.audience_help_used).to be_falsey
 
-      # фигачим запрос в контроллен с нужным типом
+      # отправляем запрос в контроллер с нужным типом
       put :help, id: game_w_questions.id, help_type: :audience_help
       game = assigns(:game)
 
@@ -90,6 +122,39 @@ RSpec.describe GamesController, type: :controller do
       expect(game.current_game_question.help_hash[:audience_help]).to be
       expect(game.current_game_question.help_hash[:audience_help].keys).to contain_exactly('a', 'b', 'c', 'd')
       expect(response).to redirect_to(game_path(game))
+    end
+
+    # юзер берет деньги
+    it 'takes money' do
+      # вручную поднимем уровень вопроса до выигрыша 200
+      game_w_questions.update_attribute(:current_level, 2)
+
+      put :take_money, id: game_w_questions.id
+      game = assigns(:game)
+      expect(game.finished?).to be_truthy
+      expect(game.prize).to eq(200)
+
+      # пользователь изменился в базе, надо в коде перезагрузить!
+      user.reload
+      expect(user.balance).to eq(200)
+
+      expect(response).to redirect_to(user_path(user))
+      expect(flash[:warning]).to be
+    end
+
+    it 'try to create second game' do
+      # убедились что есть игра в работе
+      expect(game_w_questions.finished?).to be_falsey
+
+      # отправляем запрос на создание, убеждаемся что новых Game не создалось
+      expect { post :create }.to change(Game, :count).by(0)
+
+      game = assigns(:game) # вытаскиваем из контроллера поле @game
+      expect(game).to be_nil
+
+      # и редирект на страницу старой игры
+      expect(response).to redirect_to(game_path(game_w_questions))
+      expect(flash[:alert]).to be
     end
   end
 end
