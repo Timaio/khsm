@@ -19,37 +19,49 @@ RSpec.describe GamesController, type: :controller do
 
   # группа тестов для незалогиненного юзера (Анонимус)
   context 'Anon' do
-    # из экшена show анона посылаем
-    after(:each) do
+    it 'kick from #show' do
+      # вызываем экшен
+      get :show, id: game_w_questions.id
       # проверяем ответ
       expect(response.status).not_to eq(200) # статус не 200 ОК
       expect(response).to redirect_to(new_user_session_path) # devise должен отправить на логин
       expect(flash[:alert]).to be # во flash должен быть прописана ошибка
     end
 
-    it 'kick from #show' do
-      # вызываем экшен
-      get :show, id: game_w_questions.id
-    end
-
     it 'kick from #create' do
       # вызываем экшен
-      post :create, id: game_w_questions.id
+      post :create
+      # проверяем ответ
+      expect(response.status).not_to eq(200) # статус не 200 ОК
+      expect(response).to redirect_to(new_user_session_path) # devise должен отправить на логин
+      expect(flash[:alert]).to be # во flash должен быть прописана ошибка
     end
 
     it 'kick from #answer' do
       # вызываем экшен
       put :answer, id: game_w_questions.id
+      # проверяем ответ
+      expect(response.status).not_to eq(200) # статус не 200 ОК
+      expect(response).to redirect_to(new_user_session_path) # devise должен отправить на логин
+      expect(flash[:alert]).to be # во flash должен быть прописана ошибка
     end
 
     it 'kick from #take_money' do
       # вызываем экшен
       put :take_money, id: game_w_questions.id
+      # проверяем ответ
+      expect(response.status).not_to eq(200) # статус не 200 ОК
+      expect(response).to redirect_to(new_user_session_path) # devise должен отправить на логин
+      expect(flash[:alert]).to be # во flash должен быть прописана ошибка
     end
 
     it 'kick from #help' do
       # вызываем экшен
       put :help, id: game_w_questions.id
+      # проверяем ответ
+      expect(response.status).not_to eq(200) # статус не 200 ОК
+      expect(response).to redirect_to(new_user_session_path) # devise должен отправить на логин
+      expect(flash[:alert]).to be # во flash должен быть прописана ошибка
     end
   end
 
