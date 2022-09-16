@@ -18,8 +18,8 @@ RSpec.describe GamesController, type: :controller do
   let(:game_w_questions) { FactoryBot.create(:game_with_questions, user: user) }
 
   # группа тестов для незалогиненного юзера (Анонимус)
-  context 'Anon' do
-    it 'kick from #show' do
+  context 'User is not signed in' do
+    it 'kicks from #show' do
       # вызываем экшен
       get :show, id: game_w_questions.id
       # проверяем ответ
@@ -28,7 +28,7 @@ RSpec.describe GamesController, type: :controller do
       expect(flash[:alert]).to be # во flash должен быть прописана ошибка
     end
 
-    it 'kick from #create' do
+    it 'kicks from #create' do
       # вызываем экшен
       post :create
       # проверяем ответ
@@ -37,7 +37,7 @@ RSpec.describe GamesController, type: :controller do
       expect(flash[:alert]).to be # во flash должен быть прописана ошибка
     end
 
-    it 'kick from #answer' do
+    it 'kicks from #answer' do
       # вызываем экшен
       put :answer, id: game_w_questions.id
       # проверяем ответ
@@ -46,7 +46,7 @@ RSpec.describe GamesController, type: :controller do
       expect(flash[:alert]).to be # во flash должен быть прописана ошибка
     end
 
-    it 'kick from #take_money' do
+    it 'kicks from #take_money' do
       # вызываем экшен
       put :take_money, id: game_w_questions.id
       # проверяем ответ
@@ -55,7 +55,7 @@ RSpec.describe GamesController, type: :controller do
       expect(flash[:alert]).to be # во flash должен быть прописана ошибка
     end
 
-    it 'kick from #help' do
+    it 'kicks from #help' do
       # вызываем экшен
       put :help, id: game_w_questions.id
       # проверяем ответ
@@ -66,12 +66,12 @@ RSpec.describe GamesController, type: :controller do
   end
 
   # группа тестов на экшены контроллера, доступных залогиненным юзерам
-  context 'Usual user' do
+  context 'User is signed in' do
     # перед каждым тестом в группе
     before(:each) { sign_in user } # логиним юзера user с помощью спец. Devise метода sign_in
 
     # юзер может создать новую игру
-    it 'creates game' do
+    it 'allows to create a new game - #create' do
       # сперва накидаем вопросов, из чего собирать новую игру
       generate_questions(15)
 
@@ -87,7 +87,7 @@ RSpec.describe GamesController, type: :controller do
     end
 
     # юзер видит свою игру
-    it '#show alien game' do
+    it 'shows own game - #show' do
       get :show, id: game_w_questions.id
       game = assigns(:game) # вытаскиваем из контроллера поле @game
       expect(game.finished?).to be_falsey
@@ -98,7 +98,7 @@ RSpec.describe GamesController, type: :controller do
     end
 
     # юзер не видит чужую игру
-    it "#show game" do
+    it "does not show someone else's game - #show" do
       alien_game = FactoryBot.create(:game_with_questions)
       get :show, id: alien_game.id
       expect(response.status).not_to eq(200) # статус не 200 ОК
@@ -107,7 +107,7 @@ RSpec.describe GamesController, type: :controller do
     end
 
     # юзер отвечает на игру корректно - игра продолжается
-    it 'answers correct' do
+    it 'continiues the game with a correct answer' do
       # передаем параметр params[:letter]
       put :answer, id: game_w_questions.id, letter: game_w_questions.current_game_question.correct_answer_key
       game = assigns(:game)
@@ -119,7 +119,7 @@ RSpec.describe GamesController, type: :controller do
     end
 
     # юзер отвечает на игру некорректно - игра заканчивается
-    it 'answers incorrect' do
+    it 'ends the game with a wrong answer' do
       # передаем параметр params[:letter]
       put :answer, id: game_w_questions.id, letter: 'c'
       game = assigns(:game)
@@ -130,26 +130,44 @@ RSpec.describe GamesController, type: :controller do
       expect(flash[:alert]).to be # неудачный ответ заполняет flash
     end
 
-    # тест на отработку "помощи зала"
-    it 'uses audience help' do
-      # сперва проверяем что в подсказках текущего вопроса пусто
-      expect(game_w_questions.current_game_question.help_hash[:audience_help]).not_to be
-      expect(game_w_questions.audience_help_used).to be_falsey
+    describe '#help action' do
+      # тест на отработку "помощи зала"
+      it 'allows to use audience help' do
+        # сперва проверяем что в подсказках текущего вопроса пусто
+        expect(game_w_questions.current_game_question.help_hash[:audience_help]).not_to be
+        expect(game_w_questions.audience_help_used).to be_falsey
 
-      # отправляем запрос в контроллер с нужным типом
-      put :help, id: game_w_questions.id, help_type: :audience_help
-      game = assigns(:game)
+        # отправляем запрос в контроллер с нужным типом
+        put :help, id: game_w_questions.id, help_type: :audience_help
+        game = assigns(:game)
 
-      # проверяем, что игра не закончилась, что флажок установился, и подсказка записалась
-      expect(game.finished?).to be_falsey
-      expect(game.audience_help_used).to be_truthy
-      expect(game.current_game_question.help_hash[:audience_help]).to be
-      expect(game.current_game_question.help_hash[:audience_help].keys).to contain_exactly('a', 'b', 'c', 'd')
-      expect(response).to redirect_to(game_path(game))
+        # проверяем, что игра не закончилась, что флажок установился, и подсказка записалась
+        expect(game.finished?).to be_falsey
+        expect(game.audience_help_used).to be_truthy
+        expect(game.current_game_question.help_hash[:audience_help]).to be
+        expect(game.current_game_question.help_hash[:audience_help].keys).to contain_exactly('a', 'b', 'c', 'd')
+        expect(response).to redirect_to(game_path(game))
+      end
+
+      it 'allows to use fifty-fifty help' do
+        expect(game_w_questions.current_game_question.help_hash[:fifty_fifty]).not_to be
+        expect(game_w_questions.fifty_fifty_used).to be_falsey
+
+        # отправляем запрос в контроллер с нужным типом
+        put :help, id: game_w_questions.id, help_type: :fifty_fifty
+        game = assigns(:game)
+
+        # проверяем, что игра не закончилась, что флажок установился, и подсказка записалась
+        expect(game.finished?).to be_falsey
+        expect(game.fifty_fifty_used).to be_truthy
+        expect(game.current_game_question.help_hash[:fifty_fifty]).to be
+        expect(game.current_game_question.help_hash[:fifty_fifty].size).to eq 2
+        expect(response).to redirect_to(game_path(game))
+      end
     end
 
     # юзер берет деньги
-    it 'takes money' do
+    it 'allows to take money' do
       # вручную поднимем уровень вопроса до выигрыша 200
       game_w_questions.update_attribute(:current_level, 2)
 
@@ -166,7 +184,7 @@ RSpec.describe GamesController, type: :controller do
       expect(flash[:warning]).to be
     end
 
-    it 'try to create second game' do
+    it 'does not allow to create a second game' do
       # убедились что есть игра в работе
       expect(game_w_questions.finished?).to be_falsey
 
