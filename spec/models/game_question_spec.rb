@@ -53,6 +53,43 @@ RSpec.describe GameQuestion, type: :model do
     end
   end
 
+  describe '#add_fifty_fifty' do
+    before(:each) do
+      expect(game_question.help_hash).not_to include(:fifty_fifty)
+    end
+
+    context 'After its calling' do
+      before(:each) do
+        game_question.add_fifty_fifty
+      end
+
+      it 'adds a new help_hash element with correct values' do
+        ff_value = game_question.help_hash[:fifty_fifty]
+        expect(ff_value).to be
+        expect(ff_value).to include(game_question.correct_answer_key)
+        expect(ff_value.size).to eq 2
+      end
+    end
+  end
+
+  describe '#add_friend_call' do
+    before(:each) do
+      expect(game_question.help_hash).not_to include(:friend_call)
+    end
+
+    context 'After its calling' do
+      before(:each) do
+        game_question.add_friend_call
+      end
+
+      it 'adds a new help_hash element with correct value' do
+        fc_value = game_question.help_hash[:friend_call]
+        expect(fc_value).to be
+        expect(fc_value).to be_kind_of String
+      end
+    end
+  end
+
   describe '#correct_answer_key' do
     it 'returns correct answer key' do
       expect(game_question.correct_answer_key).to eq 'b'
