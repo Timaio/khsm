@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe 'users/show', type: :view do
-  let(:user) { FactoryBot.create(:user, name: 'Вадик', balance: 5000) }
+  let(:user) { FactoryBot.create(:user, name: 'John', balance: 5000) }
   let(:game) { FactoryBot.create(:game_with_questions, user: user) }
 
   before(:each) do
@@ -10,16 +10,18 @@ RSpec.describe 'users/show', type: :view do
     render
   end
 
-  it 'renders player\'s name' do
-    expect(rendered).to match 'Вадик'
+  it "renders player's name" do
+    expect(rendered).to match 'John'
   end
 
   it 'renders games list' do
     stub_template 'users/_game.html.erb' =>
-      '<%= game.id %>
+      <<-HTML.chomp
+      <%= game.id %>
       <%= game_label(game) %>
       <%= l game.created_at, format: :short %>
-      <%= content_tag :span, "50/50", class: "label label-primary" %>'
+      <%= content_tag :span, "50/50", class: "label label-primary" %>
+      HTML
 
     expect(rendered).to match game.id.to_s
     expect(rendered).to match 'в процессе'

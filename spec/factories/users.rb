@@ -7,7 +7,7 @@ FactoryBot.define do
   # фабрика, создающая юзеров
   factory :user do
     # генерим рандомное имя
-    name { "Жора_#{rand(999)}" }
+    name { "John_#{rand(999)}" }
 
     # email должен быть уникален - при каждом вызове фабрики n будет увеличен поэтому все юзеры
     # будут иметь разные адреса: someguy_1@example.com, someguy_2@example.com, someguy_3@example.com ...
