@@ -1,10 +1,6 @@
 require "rails_helper"
 
 RSpec.feature "USER opens another user's profile", type: :feature do
-  def helpers
-    ActionController::Base.helpers
-  end
-
   let(:user) { FactoryBot.create(:user, name: "Alice") }
   let(:another_user) { FactoryBot.create(:user, name: "Bob") }
   let!(:games) do
@@ -36,8 +32,8 @@ RSpec.feature "USER opens another user's profile", type: :feature do
 
     expect(page).to have_current_path "/users/#{another_user.id}"
     expect(page).not_to have_content "Сменить имя и пароль"
-    expect(page).to have_content helpers.number_to_currency(games[0].prize)
-    expect(page).to have_content helpers.number_to_currency(games[1].prize)
+    expect(page).to have_content number_to_currency(games[0].prize)
+    expect(page).to have_content number_to_currency(games[1].prize)
     expect(page).to have_content I18n.l(games[0].created_at, format: :short)
     expect(page).to have_content I18n.l(games[1].created_at, format: :short)
   end

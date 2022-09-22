@@ -1,4 +1,4 @@
-module MySpecHelper
+module GameSpecHelper
 
   # наш хелпер, для населения базы нужным количеством рандомных вопросов
   def generate_questions(number)
@@ -6,9 +6,4 @@ module MySpecHelper
       FactoryBot.create(:question)
     end
   end
-end
-
-
-RSpec.configure do |c|
-  c.include MySpecHelper
 end
